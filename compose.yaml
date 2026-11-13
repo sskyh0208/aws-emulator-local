@@ -1,0 +1,28 @@
+services:
+  aws-emulator:
+    build:
+      context: .docker/aws-emulator
+      args:
+        EMULATOR_ARCH: ${EMULATOR_ARCH:-aarch64}
+    image: aws-emulator
+    ports:
+      - "127.0.0.1:${PORT:-9298}:${PORT:-9298}"
+    environment:
+      EMULATOR_TELEMETRY: ${EMULATOR_TELEMETRY:-off}
+    mem_limit: 2g
+    memswap_limit: 2g
+    command: ["-p", "${PORT:-9298}", "--auth", "off"]
+
+  nginx:
+    image: nginx:stable-alpine
+    network_mode: service:aws-emulator
+    depends_on:
+      - aws-emulator
+    environment:
+      PORT: ${PORT:-9298}
+    volumes:
+      - ./.docker/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+
+networks:
+  default:
+    name: aws-emulator
